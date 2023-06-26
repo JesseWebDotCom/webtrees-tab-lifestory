@@ -19,7 +19,6 @@ use Fisharebest\Webtrees\Http\RequestHandlers\ControlPanel;
         <?= csrf_field() ?>
         <input type="hidden" name="save" id="save" value="1">
 
-        <!--
         <h5><?= I18N::translate('Sections to display:') ?></h5>
         <?= view('components/checkbox-inline', ['id' => 'showparents', 'label' => I18N::translate('Parents'), 'name' => 'showparents', 'checked' => (int)$showparents]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showsiblings', 'label' => I18N::translate('Sibilings'), 'name' => 'showsiblings', 'checked' => (int)$showsiblings]) ?>
@@ -28,7 +27,6 @@ use Fisharebest\Webtrees\Http\RequestHandlers\ControlPanel;
         <?= view('components/checkbox-inline', ['id' => 'showresidences', 'label' => I18N::translate('Residences'), 'name' => 'showresidences', 'checked' => (int)$showresidences]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showfamilies', 'label' => I18N::translate('Families'), 'name' => 'showfamilies', 'checked' => (int)$showfamilies]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showtodayage', 'label' => I18N::translate('Age Today'), 'name' => 'showtodayage', 'checked' => (int)$showtodayage]) ?>
-        -->
         
         <!-- SAVE BUTTON -->
         <hr/>

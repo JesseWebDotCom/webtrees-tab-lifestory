@@ -58,36 +58,9 @@ class LifeStoryTabModule extends AbstractModule implements ModuleTabInterface, M
      */
     private function getAbout(Individual $person): string
     {
-        /*
-        BIRTH
-        Example:
-        John Joseph Pericas was born on April 9, 1931, in New York, New York, to Carmen Matias Lugo y Abolafia, age 29, 
-        and Fernando Pericas y Vazquez, age 26.
-
-        Phrases:
-        - was born on
-        - in
-        - to
-        - age
-        - and
-
-        Example:
-        When John Fitzgerald Kennedy was born on 29 May 1917, in Brookline, Norfolk, Massachusetts, United States, 
-        his father, Joseph Patrick Kennedy, Sr., was 28 and his mother, Rose Elizabeth Fitzgerald, was 26.
-
-        Phrases:
-        - When
-        - was born on
-        - in
-        - his father
-        - was
-        - and
-        - his mother
-        */
-
         $sex = $person->sex();
 
-        $about = '';
+        $lifestory = '';
 
         // person
         $fullname = '<a href=' . $person->url() . '>' . $person->fullName() . '</a>';
@@ -99,48 +72,72 @@ class LifeStoryTabModule extends AbstractModule implements ModuleTabInterface, M
         $birth_place = $person->getBirthPlace();
 
         if ($birth_date->isOK()) {
-            $about = $fullname . ' ' . $this->translate('was born', 'PAST') . ' ' . $this->translate('on') . ' ' .$birth_date->display();
+            $lifestory = $fullname . ' ' . $this->translate('was born', 'PAST') . ' ' . $this->translate('on') . ' ' .$birth_date->display();
             if ($birth_place->id() !== 0) {
-                $about = $about . ' ' . $this->translate('in') . ' ' . $this->get_short_place($person->getBirthPlace()->gedcomName());
+                $lifestory = $lifestory . ' ' . $this->translate('in') . ' ' . $this->get_short_place($person->getBirthPlace()->gedcomName());
             }
 
             // parents
-            $parents = $person->childFamilies()->first();
-            if ($parents) {
-                $father     = $parents->husband();
-                if ($father) {
-                    $father_fullname = '<a href=' . $father->url() . '>' . $father->fullName() . '</a>';
-                    if ($father->getBirthDate()->isOK()) {
-                        $fathers_age = (string) new Age($father->getBirthDate(), $person->getBirthDate());
+            if ((bool) $this->getPreference('showparents')) { 
+                $father_fullname = '';
+                $fathers_age = '';
+                $mother_fullname = '';
+                $mothers_age = '';
+                                
+                $parents = $person->childFamilies()->first();
+                if ($parents) {
+                    $father     = $parents->husband();
+                    if ($father) {
+                        $father_fullname = '<a href=' . $father->url() . '>' . $father->fullName() . '</a>';
+                        if ($father->getBirthDate()->isOK()) {
+                            $fathers_age = (string) new Age($father->getBirthDate(), $person->getBirthDate());
+                        }
+                    }
+
+                    $mother     = $parents->wife();
+                    if ($mother) {
+                        $mother_fullname = '<a href=' . $mother->url() . '>' . $mother->fullName() . '</a>';
+                        if ($mother->getBirthDate()->isOK()) {
+                            $mothers_age = (string) new Age($mother->getBirthDate(), $person->getBirthDate());
+                        }
+                    }
+
+                    if (strlen( $fathers_age ) !== 0 || strlen( $mothers_age ) !== 0) {
+                        $lifestory = ucwords($this->translate('when')) . ' ' . $lifestory . ', ';
+                    }
+                    if (strlen( $fathers_age ) !== 0) {
+                        $lifestory = $lifestory . $this->translate('ppronoun father', null, $sex) . ' ' . $father_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $fathers_age, 0); 
+                    }
+                    if (strlen( $fathers_age ) !== 0 && strlen( $mothers_age ) !== 0) {
+                        $lifestory = $lifestory . ' ' . $this->translate('and') . ' ' . $this->translate('ppronoun mother', null, $sex) . ' ' . $mother_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $mothers_age, 0); 
+                    } elseif (strlen( $mothers_age ) !== 0) {
+                        $lifestory = $lifestory . ' ' . $this->translate('ppronoun mother', null, $sex) . ' ' . $mother_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $mothers_age, 0); 
+                    }                  
+                }
+            }
+            $lifestory = $lifestory . '. ';
+
+            // adoption
+            if ((bool) $this->getPreference('showparents')) {  
+                $adoptive_parents = array();
+                foreach ($person->facts() as $fact) {
+                    if ($fact->tag()=='INDI:ADOP') {
+                        array_push($adoptive_parents, $fact->value());
                     }
                 }
-
-                $mother     = $parents->wife();
-                if ($mother) {
-                    $mother_fullname = '<a href=' . $mother->url() . '>' . $mother->fullName() . '</a>';
-                    if ($mother->getBirthDate()->isOK()) {
-                        $mothers_age = (string) new Age($mother->getBirthDate(), $person->getBirthDate());
-                    }
+                if (count($adoptive_parents) > 0) {
+                    $adoptive_parents_phrase = str_replace('and', $this->translate('and'), $this->join_words($adoptive_parents));
+                    $lifestory = $lifestory . ucwords($this->translate('pronoun', null, $sex)) . ' ' . $this->translate('was adopted by', 'PAST') . ' ' . $adoptive_parents_phrase . '. ';
                 }
-
-                if (strlen( $fathers_age ) !== 0 || strlen( $mothers_age ) !== 0) {
-                    $about = ucwords($this->translate('when')) . ' ' . $about . ', ';
-                }
-                if (strlen( $fathers_age ) !== 0) {
-                    $about = $about . $this->translate('ppronoun father', null, $sex) . ' ' . $father_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $fathers_age, 0); 
-                }
-                if (strlen( $fathers_age ) !== 0 && strlen( $mothers_age ) !== 0) {
-                    $about = $about . ' and ' . $this->translate('ppronoun mother', null, $sex) . ' ' . $mother_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $mothers_age, 0); 
-                } elseif (strlen( $mothers_age ) !== 0) {
-                    $about = $about . ' ' . $this->translate('ppronoun mother', null, $sex) . ' ' . $mother_fullname . ' ' . $this->translate('was') . ' ' . $this->get_part(' ', $mothers_age, 0); 
-                }                  
             }
 
-            $about = $about . '. ';
+        } elseif ($birth_estimated_date->isOK()) {
+            $birth_estimated_phrase = str_replace('estimated', 'around', $birth_estimated_date->display());
+            $lifestory = $fullname . ' ' . $this->translate('was born', 'PAST') . ' ' . str_replace('around', $this->translate('around'), $birth_estimated_phrase) . '. ';
         }
         
 
-        return $about;
+        return $lifestory;
     }
 
     public function getAdminAction(): ResponseInterface
@@ -191,38 +188,38 @@ class LifeStoryTabModule extends AbstractModule implements ModuleTabInterface, M
         return redirect($this->getConfigLink());
     }
 
-    /**
-     * save the user preferences for all parameters
-     * that are not explicitly related to the extended family parts in the database
-     *
-     * @param array $params configuration parameters
-     */
-    private function postAdminActionOther(array $params)
-    {
-        $preferences = $this->listOfOtherPreferences();
-        foreach ($preferences as $preference) {
-            $this->setPreference($preference, $params[$preference]);
-        }
-    }
+    // /**
+    //  * save the user preferences for all parameters
+    //  * that are not explicitly related to the extended family parts in the database
+    //  *
+    //  * @param array $params configuration parameters
+    //  */
+    // private function postAdminActionOther(array $params)
+    // {
+    //     $preferences = $this->listOfOtherPreferences();
+    //     foreach ($preferences as $preference) {
+    //         $this->setPreference($preference, $params[$preference]);
+    //     }
+    // }
 
-    /**
-     * save the user preferences for all parameters related to this module in the database
-     *
-     * @param array $params configuration parameters
-     */
-    private function postAdminActionEfp(array $params)
-    {
-        $order = implode(",", $params['order']);
-        $this->setPreference('order', $order);
-        foreach (AboutSupport::listFamilyParts() as $efp) {
-            $this->setPreference('status-' . $efp, '0');
-        }
-        foreach ($params as $key => $value) {
-            if (str_starts_with($key, 'status-')) {
-                $this->setPreference($key, $value);
-            }
-        }
-    }
+    // /**
+    //  * save the user preferences for all parameters related to this module in the database
+    //  *
+    //  * @param array $params configuration parameters
+    //  */
+    // private function postAdminActionEfp(array $params)
+    // {
+    //     $order = implode(",", $params['order']);
+    //     $this->setPreference('order', $order);
+    //     foreach (AboutSupport::listFamilyParts() as $efp) {
+    //         $this->setPreference('status-' . $efp, '0');
+    //     }
+    //     foreach ($params as $key => $value) {
+    //         if (str_starts_with($key, 'status-')) {
+    //             $this->setPreference($key, $value);
+    //         }
+    //     }
+    // }
 
     /**
      * How should this module be identified in the control panel, etc.?
@@ -347,7 +344,7 @@ class LifeStoryTabModule extends AbstractModule implements ModuleTabInterface, M
     {
         return view($this->name() . '::' . 'tab',
             [
-                'about_content'            => $this->getAbout($individual),
+                'lifestory_content'            => $this->getAbout($individual),
             ]);
     }
 
@@ -410,12 +407,16 @@ class LifeStoryTabModule extends AbstractModule implements ModuleTabInterface, M
     
     function replacePronoun($term, $sex) {
         if ($sex === 'M') {
-            return str_replace('ppronoun', 'his', $term);
+            $term = str_replace('ppronoun', 'his', $term);
+            $term = str_replace('pronoun', 'he', $term);
         } elseif ($sex === 'F') {
-            return str_replace('ppronoun', 'her', $term);
+            $term = str_replace('ppronoun', 'her', $term);
+            $term = str_replace('pronoun', 'she', $term);
         } else {
-            return str_replace('ppronoun', 'their', $term);
+            $term = str_replace('ppronoun', 'their', $term);
+            $term = str_replace('pronoun', 'they', $term);
         }
+        return $term;
     }    
 
     /**
