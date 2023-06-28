@@ -22,6 +22,7 @@ use Fisharebest\Webtrees\Http\RequestHandlers\ControlPanel;
         <h5><?= I18N::translate('Sections to display:') ?></h5>
         <?= view('components/checkbox-inline', ['id' => 'showparents', 'label' => I18N::translate('Parents'), 'name' => 'showparents', 'checked' => (int)$showparents]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showsiblings', 'label' => I18N::translate('Sibilings'), 'name' => 'showsiblings', 'checked' => (int)$showsiblings]) ?>
+        <?= view('components/checkbox-inline', ['id' => 'showeducation', 'label' => I18N::translate('Education'), 'name' => 'showeducation', 'checked' => (int)$showeducation]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showmilitary', 'label' => I18N::translate('Military'), 'name' => 'showmilitary', 'checked' => (int)$showmilitary]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showjobs', 'label' => I18N::translate('Jobs'), 'name' => 'showjobs', 'checked' => (int)$showjobs]) ?>
         <?= view('components/checkbox-inline', ['id' => 'showresidences', 'label' => I18N::translate('Residences'), 'name' => 'showresidences', 'checked' => (int)$showresidences]) ?>
